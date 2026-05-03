@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal da Abundância Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --gold: #D4AF37;
+            --deep-blue: #0A192F;
+            --slate: #112240;
+            --light-slate: #233554;
+            --white: #E6F1FF;
+            --accent: #64FFDA;
+            --yes: #4CAF50;
+            --no: #F44336;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--deep-blue);
+            color: var(--white);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: var(--slate);
+            padding: 20px;
+            border-radius: 25px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            color: var(--gold);
+            text-align: center;
+            font-size: 22px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 5px;
+        }
+
+        .date-display {
+            text-align: center;
+            font-size: 13px;
+            opacity: 0.8;
+            margin-bottom: 20px;
+        }
+
+        /* Dashboards */
+        .dashboard {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item { margin-bottom: 12px; }
+        .stat-label { font-size: 10px; text-transform: uppercase; color: var(--gold); display: flex; justify-content: space-between; }
+        .progress-bar { height: 8px; background: #050a14; border-radius: 4px; overflow: hidden; margin-top: 5px; }
+        .progress-fill { height: 100%; width: 0%; transition: 0.5s; background: linear-gradient(90deg, var(--gold), #fff); }
+
+        /* Afirmação do Dia */
+        .section-title { font-size: 14px; color: var(--accent); margin: 20px 0 10px; text-transform: uppercase; border-bottom: 1px solid rgba(100, 255, 218, 0.1); padding-bottom: 5px; }
+        
+        textarea, input[type="text"] {
+            width: 100%;
+            background: var(--light-slate);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-family: inherit;
+            margin-bottom: 10px;
+        }
+
+        /* Lista de Rituais Estilo SIM/NÃO */
+        .ritual-group { margin-bottom: 25px; }
+        .ritual-card {
+            background: rgba(255,255,255,0.03);
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .ritual-name { font-size: 13px; flex: 1; padding-right: 10px; }
+        
+        .btn-group { display: flex; gap: 8px; }
+        .btn-choice {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: 0.3s;
+            opacity: 0.3;
+        }
+        .btn-yes { background: var(--yes); color: white; }
+        .btn-no { background: var(--no); color: white; }
+        .btn-choice.active { opacity: 1; box-shadow: 0 0 10px rgba(255,255,255,0.2); transform: scale(1.1); }
+
+        /* Timer 432Hz */
+        .timer-container {
+            background: linear-gradient(135deg, #0d1b2a, #1b263b);
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid var(--gold);
+        }
+        .timer-display { font-size: 32px; font-weight: bold; color: var(--gold); margin: 10px 0; }
+        .timer-btns button {
+            background: none; border: 1px solid var(--gold); color: var(--gold);
+            padding: 5px 15px; border-radius: 20px; cursor: pointer; margin: 0 5px;
+        }
+
+        /* Menu Inferior */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: var(--slate);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            border-top: 1px solid var(--gold);
+        }
+        .nav-btn { color: var(--white); background: none; border: none; font-size: 10px; cursor: pointer; }
+
+        #insight-card {
+            display: none;
+            background: rgba(212, 175, 55, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            border-left: 5px solid var(--gold);
+            margin-top: 20px;
+            font-style: italic;
+        }
+
+        .backup-btns { display: flex; gap: 5px; margin-top: 20px; }
+        .btn-sm { font-size: 9px; padding: 5px; background: none; border: 1px solid #444; color: #888; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Portal da Abundância</h1>
+    <div class="date-display" id="dateText"></div>
+
+    <!-- Dashboard de Energia -->
+    <div class="dashboard">
+        <div class="stat-item">
+            <div class="stat-label">Energia Vital (Sintonia Total) <span id="energy-val">0%</span></div>
+            <div class="progress-bar"><div id="energy-bar" class="progress-fill"></div></div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">Ciclo de Manifestação (30d) <span id="month-val">0%</span></div>
+            <div class="progress-bar"><div id="month-bar" class="progress-fill" style="background: var(--accent)"></div></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; color: var(--gold);">
+            <span>🔥 Constância: <span id="streak-count">0</span> dias</span>
+            <span id="status-msg">Vibrando Baixo</span>
+        </div>
+    </div>
+
+    <!-- Afirmação do Dia -->
+    <div class="section-title">Norte Mental (Afirmação do Dia)</div>
+    <input type="text" id="dailyAffirmation" placeholder="Eu sou próspero, eu sou luz..." oninput="saveDailyData()">
+
+    <!-- Timer Solfeggio -->
+    <div class="section-title">Meditação 432Hz Solfeggio</div>
+    <div class="timer-container">
+        <div class="timer-display" id="timer">10:00</div>
+        <div class="timer-btns">
+            <button onclick="startTimer(5)">5m</button>
+            <button onclick="startTimer(10)">10m</button>
+            <button onclick="startTimer(20)">20m</button>
+            <button onclick="toggleAudio()" id="audioBtn">🎵 Ligar Frequência</button>
+        </div>
+    </div>
+
+    <!-- Rituais por Fluxo -->
+    <div id="ritual-render-area">
+        <!-- Renderizado via JS -->
+    </div>
+
+    <!-- Diário de Manifestação -->
+    <div class="section-title">Diário de Manifestação (Tempo Presente)</div>
+    <textarea id="manifestationDiary" rows="5" placeholder="Eu sou grato por estar vivendo agora..." oninput="saveDailyData()"></textarea>
+
+    <!-- Insight Card -->
+    <div id="insight-card">
+        <div style="font-size: 10px; color: var(--gold); margin-bottom: 5px;">INSIGHT DE PROSPERIDADE</div>
+        <div id="insight-text"></div>
+    </div>
+
+    <!-- Backup e Gestão -->
+    <div class="backup-btns">
+        <button class="btn-sm" onclick="exportData()">Exportar Backup</button>
+        <button class="btn-sm" onclick="importData()">Importar Backup</button>
+        <button class="btn-sm" onclick="resetRituals()">Resetar Rituais Padrão</button>
+    </div>
+</div>
+
+<audio id="bellSound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
+
+<script>
+    // Configurações e Rituais
+    const DEFAULT_RITUALS = {
+        "Manhã": ["Afirmações Eu acordo agora com...", "Exercício físico"],
+        "Fluxo Livre": ["Meditação Elainne", "Meditação Dra. Próton", "Frequência Otávio", "Ressonância Harmônica", "Meditação do perdão", "Afirmações Eu Sou", "Visualização criativa", "Mantras Aura Money", "Diário da gratidão (escrever 10 motivos)"],
+        "Noite": ["Afirmações Eu vou dormir com..."]
+    };
+
+    let rituals = JSON.parse(localStorage.getItem('portal_rituais_lista')) || DEFAULT_RITUALS;
+    let audioCtx = null;
+    let oscillator = null;
+    let timerInterval = null;
+
+    // Inicialização
+    function init() {
+        const d = new Date();
+        document.getElementById('dateText').innerText = d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+        renderRituals();
+        loadDailyData();
+        updateStats();
+        checkStreak();
+    }
+
+    // Renderizar Rituais com SIM/NÃO
+    function renderRituals() {
+        const area = document.getElementById('ritual-render-area');
+        const today = getTodayKey();
+        const saved = JSON.parse(localStorage.getItem('portal_progresso_' + today) || "{}");
+        
+        let html = '';
+        for (let category in rituals) {
+            html += `<div class="section-title">${category}</div><div class="ritual-group">`;
+            rituals[category].forEach(ritual => {
+                const status = saved[ritual]; // true, false ou undefined
+                html += `
+                    <div class="ritual-card">
+                        <div class="ritual-name">${ritual}</div>
+                        <div class="btn-group">
+                            <button class="btn-choice btn-yes ${status === true ? 'active' : ''}" onclick="toggleRitual('${ritual}', true)">SIM</button>
+                            <button class="btn-choice btn-no ${status === false ? 'active' : ''}" onclick="toggleRitual('${ritual}', false)">NÃO</button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        }
+        area.innerHTML = html;
+    }
+
+    function toggleRitual(name, value) {
+        const today = getTodayKey();
+        let saved = JSON.parse(localStorage.getItem('portal_progresso_' + today) || "{}");
+        
+        // Se clicar no que já está ativo, desmarca
+        if (saved[name] === value) delete saved[name];
+        else saved[name] = value;
+
+        localStorage.setItem('portal_progresso_' + today, JSON.stringify(saved));
+        renderRituals();
+        updateStats();
+    }
+
+    // Cálculos de Status
+    function updateStats() {
+        const today = getTodayKey();
+        const saved = JSON.parse(localStorage.getItem('portal_progresso_' + today) || "{}");
+        const totalRituals = Object.values(rituals).flat().length;
+        const done = Object.values(saved).filter(v => v === true).length;
+        const skipped = Object.values(saved).filter(v => v === false).length;
+        const answered = done + skipped;
+
+        // Cálculo de Energia Vital (Rituals + Texto)
+        const affirmation = document.getElementById('dailyAffirmation').value.length > 5 ? 10 : 0;
+        const diary = document.getElementById('manifestationDiary').value.length > 20 ? 10 : 0;
+        const ritualScore = (done / totalRituals) * 80;
+        const energyTotal = Math.round(ritualScore + affirmation + diary);
+
+        document.getElementById('energy-bar').style.width = energyTotal + "%";
+        document.getElementById('energy-val').innerText = energyTotal + "%";
+
+        // Status visual
+        const statusMsg = document.getElementById('status-msg');
+        if(energyTotal > 90) { statusMsg.innerText = "Frequência Mestre"; statusMsg.style.color = "var(--accent)"; handleSuccess(); }
+        else if(energyTotal > 50) { statusMsg.innerText = "Em Expansão"; statusMsg.style.color = "var(--gold)"; }
+        else { statusMsg.innerText = "Ajustando Sintonia"; statusMsg.style.color = "#888"; }
+
+        // Mensal (últimos 30 dias)
+        updateMonthlyBar();
+    }
+
+    function updateMonthlyBar() {
+        let totalPossible = 0;
+        let totalDone = 0;
+        for(let i=0; i<30; i++) {
+            let d = new Date(); d.setDate(d.getDate() - i);
+            let key = d.toLocaleDateString('pt-BR');
+            let data = JSON.parse(localStorage.getItem('portal_progresso_' + key) || "{}");
+            let dayRituals = Object.values(rituals).flat();
+            totalPossible += dayRituals.length;
+            dayRituals.forEach(r => { if(data[r] === true) totalDone++; });
+        }
+        let p = Math.round((totalDone/totalPossible)*100) || 0;
+        document.getElementById('month-bar').style.width = p + "%";
+        document.getElementById('month-val').innerText = p + "%";
+    }
+
+    // Lógica de Constância (Streak)
+    function checkStreak() {
+        let streak = 0;
+        let d = new Date();
+        
+        while(true) {
+            let key = d.toLocaleDateString('pt-BR');
+            let data = JSON.parse(localStorage.getItem('portal_progresso_' + key) || "{}");
+            const total = Object.values(rituals).flat();
+            const done = total.every(r => data[r] !== undefined); // Considera streak se ticar SIM ou NÃO em TUDO
+            
+            if(done) {
+                streak++;
+                d.setDate(d.getDate() - 1);
+            } else {
+                // Se hoje ainda não terminou, não quebra a streak, mas olha o dia anterior
+                if(key === getTodayKey()) {
+                    d.setDate(d.getDate() - 1);
+                    continue;
+                }
+                break;
+            }
+        }
+        document.getElementById('streak-count').innerText = streak;
+    }
+
+    // Áudio 432Hz
+    function toggleAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(432, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.start();
+            document.getElementById('audioBtn').innerText = "⏸ Pausar 432Hz";
+        } else {
+            audioCtx.close();
+            audioCtx = null;
+            document.getElementById('audioBtn').innerText = "🎵 Ligar Frequência";
+        }
+    }
+
+    // Timer
+    function startTimer(minutes) {
+        clearInterval(timerInterval);
+        let seconds = minutes * 60;
+        timerInterval = setInterval(() => {
+            seconds--;
+            let m = Math.floor(seconds / 60);
+            let s = seconds % 60;
+            document.getElementById('timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+            if(seconds <= 0) {
+                clearInterval(timerInterval);
+                document.getElementById('bellSound').play();
+                alert("Meditação Concluída! Você está em alta frequência.");
+            }
+        }, 1000);
+    }
+
+    // Sucesso e Efeitos
+    function handleSuccess() {
+        if(!window.celebratedToday) {
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#D4AF37', '#64FFDA', '#ffffff'] });
+            document.getElementById('bellSound').play();
+            window.celebratedToday = true;
+            showInsight();
+        }
+    }
+
+    function showInsight() {
+        const insights = [
+            "A riqueza é o resultado da sua vibração interna.",
+            "Tudo o que você busca, já está buscando você.",
+            "A gratidão é o atalho para o milagre.",
+            "Sua mente é um jardim, seus pensamentos são as sementes."
+        ];
+        document.getElementById('insight-text').innerText = insights[Math.floor(Math.random() * insights.length)];
+        document.getElementById('insight-card').style.display = 'block';
+    }
+
+    // Auxiliares de Dados
+    function getTodayKey() { return new Date().toLocaleDateString('pt-BR'); }
+
+    function saveDailyData() {
+        const today = getTodayKey();
+        const data = {
+            affirmation: document.getElementById('dailyAffirmation').value,
+            diary: document.getElementById('manifestationDiary').value
+        };
+        localStorage.setItem('portal_texto_' + today, JSON.stringify(data));
+        updateStats();
+    }
+
+    function loadDailyData() {
+        const today = getTodayKey();
+        const data = JSON.parse(localStorage.getItem('portal_texto_' + today) || "{}");
+        document.getElementById('dailyAffirmation').value = data.affirmation || "";
+        document.getElementById('manifestationDiary').value = data.diary || "";
+    }
+
+    function exportData() {
+        const data = JSON.stringify(localStorage);
+        const blob = new Blob([data], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `portal_abundancia_backup.json`;
+        a.click();
+    }
+
+    function importData() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.onchange = e => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = event => {
+                const data = JSON.parse(event.target.result);
+                Object.keys(data).forEach(key => localStorage.setItem(key, data[key]));
+                location.reload();
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    }
+
+    function resetRituals() {
+        if(confirm("Deseja resetar a lista para os rituais padrão?")) {
+            localStorage.setItem('portal_rituais_lista', JSON.stringify(DEFAULT_RITUALS));
+            location.reload();
+        }
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
